@@ -1,14 +1,15 @@
 ﻿using System;
-using System.IO;
-using System.Windows;
-using System.Diagnostics;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Interop;
-using System.Windows.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace SekiroFpsUnlockAndMore
 {
@@ -77,6 +78,8 @@ namespace SekiroFpsUnlockAndMore
         /// </summary>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            LoadLanguage();
+
             _logPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\SekiroFpsUnlockAndMore.log";
 
             this.cbSelectFov.ItemsSource = _fovMatrix;
@@ -275,7 +278,7 @@ namespace SekiroFpsUnlockAndMore
             if (this.cbUnlockFps.IsChecked == true)
             {
                 int fps = -1;
-                bool isNumber = Int32.TryParse(this.tbFps.Text, out fps);
+                bool isNumber = int.TryParse(this.tbFps.Text, out fps);
                 if (fps < 0 || !isNumber)
                 {
                     this.tbFps.Text = "60";
@@ -319,7 +322,7 @@ namespace SekiroFpsUnlockAndMore
             if (this.cbAddWidescreen.IsChecked == true)
             {
                 int width = -1;
-                bool isNumber = Int32.TryParse(this.tbWidth.Text, out width);
+                bool isNumber = int.TryParse(this.tbWidth.Text, out width);
                 if (width < 800 || !isNumber)
                 {
                     this.tbWidth.Text = "2560";
@@ -331,7 +334,7 @@ namespace SekiroFpsUnlockAndMore
                     width = 5760;
                 }
                 int height = -1;
-                isNumber = Int32.TryParse(this.tbHeight.Text, out height);
+                isNumber = int.TryParse(this.tbHeight.Text, out height);
                 if (height < 450 || !isNumber)
                 {
                     this.tbHeight.Text = "1080";
@@ -344,7 +347,7 @@ namespace SekiroFpsUnlockAndMore
                 }
                 WriteBytes(_gameProcStatic, _offset_resolution, BitConverter.GetBytes(width));
                 WriteBytes(_gameProcStatic, _offset_resolution + 4, BitConverter.GetBytes(height));
-                WriteBytes(_gameProcStatic, _offset_widescreen_219, (float) width / (float) height > 1.9f ? PATCH_WIDESCREEN_219_ENABLE : PATCH_WIDESCREEN_219_DISABLE);
+                WriteBytes(_gameProcStatic, _offset_widescreen_219, (float)width / (float)height > 1.9f ? PATCH_WIDESCREEN_219_ENABLE : PATCH_WIDESCREEN_219_DISABLE);
             }
             else if (this.cbAddWidescreen.IsChecked == false)
             {
@@ -356,7 +359,7 @@ namespace SekiroFpsUnlockAndMore
             if (this.cbFov.IsChecked == true)
             {
                 byte[] fovByte = new byte[1];
-                fovByte[0] = ((KeyValuePair<byte, string>) this.cbSelectFov.SelectedItem).Key;
+                fovByte[0] = ((KeyValuePair<byte, string>)this.cbSelectFov.SelectedItem).Key;
                 WriteBytes(_gameProcStatic, _offset_fovsetting, fovByte);
             }
             else if (this.cbFov.IsChecked == false)
@@ -455,7 +458,7 @@ namespace SekiroFpsUnlockAndMore
         /// </summary>
         /// <param name="address">The address the pointer points to.</param>
         /// <returns>True if pointer points to a valid address.</returns>
-        private static bool IsValid(Int64 address)
+        private static bool IsValid(long address)
         {
             return (address >= 0x10000 && address < 0x000F000000000000);
         }
@@ -467,7 +470,7 @@ namespace SekiroFpsUnlockAndMore
         /// <param name="lpBaseAddress">The address to write from.</param>
         /// <param name="bytes">The byte array to write.</param>
         /// <returns>True if successful, false otherwise.</returns>
-        private static bool WriteBytes(IntPtr gameProc, Int64 lpBaseAddress, byte[] bytes)
+        private static bool WriteBytes(IntPtr gameProc, long lpBaseAddress, byte[] bytes)
         {
             IntPtr lpNumberOfBytesWritten;
             return WriteProcessMemory(gameProc, lpBaseAddress, bytes, (ulong)bytes.Length, out lpNumberOfBytesWritten);
@@ -496,9 +499,9 @@ namespace SekiroFpsUnlockAndMore
 
         private void Numeric_PastingHandler(object sender, DataObjectPastingEventArgs e)
         {
-            if (e.DataObject.GetDataPresent(typeof(String)))
+            if (e.DataObject.GetDataPresent(typeof(string)))
             {
-                String text = (String)e.DataObject.GetData(typeof(String));
+                string text = (string)e.DataObject.GetData(typeof(string));
                 if (IsNumericInput(text)) e.CancelCommand();
             }
             else e.CancelCommand();
@@ -538,6 +541,45 @@ namespace SekiroFpsUnlockAndMore
             }
         }
 
+        #region i18n
+
+        private void LoadLanguage()
+        {
+            var langName = CultureInfo.CurrentCulture.Name;
+            if (langName != @"zh-CN")
+            {
+                if (Application.LoadComponent(new Uri(@"Resources/Langs/en-US.xaml", UriKind.Relative)) is
+                        ResourceDictionary langRd)
+                {
+                    //如果已使用其他语言,先清空
+                    if (Resources.MergedDictionaries.Count > 0)
+                    {
+                        Resources.MergedDictionaries.Clear();
+                    }
+
+                    Resources.MergedDictionaries.Add(langRd);
+                }
+            }
+        }
+
+        public static string GetString(string key)
+        {
+            var value = key;
+
+            try
+            {
+                value = Application.Current.FindResource(key).ToString();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            return value;
+        }
+
+        #endregion
+
         #region WINAPI
         private const int WM_HOTKEY_MSG_ID = 0x0312;
         private const int MOD_CONTROL = 0x0002;
@@ -561,28 +603,28 @@ namespace SekiroFpsUnlockAndMore
         private const uint SWP_SHOWWINDOW = 0x0040;
 
         [DllImport("user32.dll")]
-        public static extern Boolean RegisterHotKey(IntPtr hWnd, Int32 id, UInt32 fsModifiers, UInt32 vlc);
+        public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vlc);
 
         [DllImport("user32.dll")]
-        public static extern Boolean UnregisterHotKey(IntPtr hWnd, Int32 id);
+        public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr OpenProcess(
-            UInt32 dwDesiredAccess,
-            Boolean bInheritHandle,
-            UInt32 dwProcessId);
+            uint dwDesiredAccess,
+            bool bInheritHandle,
+            uint dwProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean CloseHandle(IntPtr hObject);
+        private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, Int32 nIndex);
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
 
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
-        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, Int32 nIndex, Int64 dwNewLong);
+        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, long dwNewLong);
 
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
-        public static extern IntPtr SetWindowPos(IntPtr hWnd, Int32 hWndInsertAfter, Int32 X, Int32 Y, Int32 cx, Int32 cy, UInt32 uFlags);
+        public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
@@ -602,9 +644,9 @@ namespace SekiroFpsUnlockAndMore
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool WriteProcessMemory(
             IntPtr hProcess,
-            Int64 lpBaseAddress,
-            [In, Out] Byte[] lpBuffer,
-            UInt64 dwSize,
+            long lpBaseAddress,
+            [In, Out] byte[] lpBuffer,
+            ulong dwSize,
             out IntPtr lpNumberOfBytesWritten);
 
         #endregion

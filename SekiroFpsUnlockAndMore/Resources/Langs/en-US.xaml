@@ -1,0 +1,27 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:system1="clr-namespace:System;assembly=System">
+    <system:String x:Key="AppTitle">Sekiro FPS Unlocker and more v1.0.1</system:String>
+    <system:String x:Key="UnlockFps">FPS lock (0= unlimited):</system:String>
+    <system:String x:Key="AddWidescreen">Add custom resolution:</system:String>
+    <system:String x:Key="AddFov">Increase FOV by:</system:String>
+    <system:String x:Key="Borderless">Borderless window mode</system:String>
+    <system:String x:Key="Patch">Patch game (CTRL + P)</system:String>
+    <system:String x:Key="WaitStatus">waiting for game...</system:String>
+    <system:String x:Key="R1">If your monitor is 60 Hz you will have to use</system:String>
+    <system:String x:Key="R2">fullscreen mode and force disable VSYNC</system:String>
+    <system:String x:Key="R3">with Nvidia Control panel or AMD Radeon Settings to get frame rate unlock working.</system:String>
+    <system:String x:Key="R4">To avoid stuttering it's recommended to disable VSYNC even with a 144 Hz monitor.</system:String>
+    <system:String x:Key="R5">If your monitor is >60 Hz you will have to use</system:String>
+    <system:String x:Key="R6">borderless window mode or force the game to run on highest available refresh rate</system:String>
+    <system:String x:Key="R7">using Nvidia Control panel or AMD Radeon Settings.</system:String>
+    <system:String x:Key="R8">Borderless window mode requires "Window mode" in game settings first.</system:String>
+    <system:String x:Key="R9">Custom resolution adds 21/9 support and overwrites default 1920x1080 resolution, hud will be limited to 16/9 though.</system:String>
+    <system:String x:Key="R10">Borderless window mode with custom resolution requires you to patch and set resolution first, then add borderless patch afterwards.</system:String>
+    <system:String x:Key="R11">For FOV patch to work you need to be ingame.</system:String>
+    <system:String x:Key="R12">FOV patch resets after save game reload.</system:String>
+    <system:String x:Key="R13">See the link below for detailed information, GSYNC support and an AMD fix.</system:String>
+    <system:String x:Key="Version">v1.0.1 - by uberhalit</system:String>
+    <system1:Uri x:Key="Link">https://github.com/uberhalit/SekiroFpsUnlockAndMore</system1:Uri>
+</ResourceDictionary>
