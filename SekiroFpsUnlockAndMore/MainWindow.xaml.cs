@@ -13,7 +13,7 @@ using System.Windows.Threading;
 
 namespace SekiroFpsUnlockAndMore
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         internal const string PROCESS_NAME = "sekiro";
         internal const string PROCESS_TITLE = "Sekiro";
@@ -34,11 +34,11 @@ namespace SekiroFpsUnlockAndMore
         internal const string PATTERN_RESOLUTION_MASK = "xxxxxx";
         internal const string PATTERN_WIDESCREEN_219 = "00 47 47 8B 94 C7 1C 02 00 00"; // ?? 47 47 8B 94 C7 1C 02 00 00
         internal const string PATTERN_WIDESCREEN_219_MASK = "?xxxxxxxxx";
-        internal byte[] PATCH_FRAMERATE_RUNNING_FIX_DISABLE = new byte[1] { 0x90 };
-        internal byte[] PATCH_FRAMERATE_UNLIMITED = new byte[4] { 0x00, 0x00, 0x00, 0x00 };
-        internal byte[] PATCH_WIDESCREEN_219_DISABLE = new byte[1] { 0x74 };
-        internal byte[] PATCH_WIDESCREEN_219_ENABLE = new byte[1] { 0xEB };
-        internal byte[] PATCH_FOV_DISABLE = new byte[1] { 0x0C };
+        internal byte[] PATCH_FRAMERATE_RUNNING_FIX_DISABLE = { 0x90 };
+        internal byte[] PATCH_FRAMERATE_UNLIMITED = { 0x00, 0x00, 0x00, 0x00 };
+        internal byte[] PATCH_WIDESCREEN_219_DISABLE = { 0x74 };
+        internal byte[] PATCH_WIDESCREEN_219_ENABLE = { 0xEB };
+        internal byte[] PATCH_FOV_DISABLE = { 0x0C };
 
         // credits to jackfuste for FOV findings
         internal const string PATTERN_FOVSETTING = "F3 0F 10 08 F3 0F 59 0D 00 E7 9B 02"; // F3 0F 10 08 F3 0F 59 0D ?? E7 9B 02
@@ -82,17 +82,17 @@ namespace SekiroFpsUnlockAndMore
 
             _logPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\SekiroFpsUnlockAndMore.log";
 
-            this.cbSelectFov.ItemsSource = _fovMatrix;
-            this.cbSelectFov.SelectedIndex = 0;
+            cbSelectFov.ItemsSource = _fovMatrix;
+            cbSelectFov.SelectedIndex = 0;
 
-            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            var hwnd = new WindowInteropHelper(this).Handle;
             if (!RegisterHotKey(hwnd, 9009, MOD_CONTROL, VK_P))
-                MessageBox.Show("Hotkey is already in use, it may not work.", "Sekiro FPS Unlocker and more");
+                MessageBox.Show(GetString(@"HotkeyFailed"), GetString(@"AppTitle"));
 
             // add a hook for WindowsMessageQueue to recognize hotkey-press
-            ComponentDispatcher.ThreadFilterMessage += new ThreadMessageEventHandler(ComponentDispatcherThreadFilterMessage);
+            ComponentDispatcher.ThreadFilterMessage += ComponentDispatcherThreadFilterMessage;
 
-            _dispatcherTimerCheck.Tick += new EventHandler(CheckGame);
+            _dispatcherTimerCheck.Tick += CheckGame;
             _dispatcherTimerCheck.Interval = new TimeSpan(0, 0, 0, 3);
             _dispatcherTimerCheck.Start();
         }
@@ -103,7 +103,7 @@ namespace SekiroFpsUnlockAndMore
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             ComponentDispatcher.ThreadFilterMessage -= ComponentDispatcherThreadFilterMessage;
-            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            var hwnd = new WindowInteropHelper(this).Handle;
             UnregisterHotKey(hwnd, 9009);
             if (_gameProc != IntPtr.Zero)
                 CloseHandle(_gameProc);
@@ -132,15 +132,15 @@ namespace SekiroFpsUnlockAndMore
         /// </summary>
         private void CheckGame(object sender, EventArgs e)
         {
-            Process[] procList = Process.GetProcessesByName(PROCESS_NAME);
+            var procList = Process.GetProcessesByName(PROCESS_NAME);
             if (procList.Length < 1)
                 return;
 
             if (_running || _offset_framelock != 0x0)
                 return;
 
-            int gameIndex = -1;
-            for (int i = 0; i < procList.Length; i++)
+            var gameIndex = -1;
+            for (var i = 0; i < procList.Length; i++)
             {
                 if (procList[i].MainWindowTitle == PROCESS_TITLE && procList[i].MainModule.FileVersionInfo.FileDescription.Contains(PROCESS_DESCRIPTION))
                 {
@@ -150,13 +150,13 @@ namespace SekiroFpsUnlockAndMore
             }
             if (gameIndex < 0)
             {
-                UpdateStatus("no valid game process found...", Brushes.Red);
-                LogToFile("no valid game process found...");
-                for (int j = 0; j < procList.Length; j++)
+                UpdateStatus(GetString(@"NoProcess"), Brushes.Red);
+                LogToFile(GetString(@"NoProcess"));
+                for (var j = 0; j < procList.Length; j++)
                 {
-                    LogToFile(string.Format("\tProcess #{0}: '{1}' | ({2})", j, procList[j].MainModule.FileName, procList[j].MainModule.FileVersionInfo.FileName));
-                    LogToFile(string.Format("\tDescription #{0}: {1} | {2} | {3}", j, procList[j].MainWindowTitle, procList[j].MainModule.FileVersionInfo.CompanyName, procList[j].MainModule.FileVersionInfo.FileDescription));
-                    LogToFile(string.Format("\tData #{0}: {1} | {2} | {3} | {4} | {5}", j, procList[j].MainModule.FileVersionInfo.FileVersion, procList[j].MainModule.ModuleMemorySize, procList[j].StartTime, procList[j].Responding, procList[j].HasExited));
+                    LogToFile($@"\t{GetString(@"Proc")} #{j}: '{procList[j].MainModule.FileName}' | ({procList[j].MainModule.FileVersionInfo.FileName})");
+                    LogToFile($@"\t{GetString(@"Description")} #{j}: {procList[j].MainWindowTitle} | {procList[j].MainModule.FileVersionInfo.CompanyName} | {procList[j].MainModule.FileVersionInfo.FileDescription}");
+                    LogToFile($@"\t{GetString(@"Data")} #{j}: {procList[j].MainModule.FileVersionInfo.FileVersion} | {procList[j].MainModule.ModuleMemorySize} | {procList[j].StartTime} | {procList[j].Responding} | {procList[j].HasExited}");
                 }
                 return;
             }
@@ -167,13 +167,13 @@ namespace SekiroFpsUnlockAndMore
             _gameProcStatic = _gameProc;
             if (_gameHwnd == IntPtr.Zero || _gameProc == IntPtr.Zero || procList[gameIndex].MainModule.BaseAddress == IntPtr.Zero)
             {
-                LogToFile("no access to game...");
-                LogToFile("Hwnd: " + _gameHwnd.ToString("X"));
-                LogToFile("Proc: " + _gameProc.ToString("X"));
-                LogToFile("Base: " + procList[gameIndex].MainModule.BaseAddress.ToString("X"));
+                LogToFile(GetString(@"NoAccess"));
+                LogToFile($@"{GetString(@"Hwnd")}: {_gameHwnd.ToString("X")}");
+                LogToFile($@"{GetString(@"Proc")}: {_gameProc.ToString("X")}");
+                LogToFile($@"{GetString(@"Base")}: {procList[gameIndex].MainModule.BaseAddress.ToString("X")}");
                 if (!_retryAccess)
                 {
-                    UpdateStatus("no access to game...", Brushes.Red);
+                    UpdateStatus(GetString(@"NoAccess"), Brushes.Red);
                     _dispatcherTimerCheck.Stop();
                     return;
                 }
@@ -184,7 +184,7 @@ namespace SekiroFpsUnlockAndMore
                     _gameProc = IntPtr.Zero;
                     _gameProcStatic = IntPtr.Zero;
                 }
-                LogToFile("retrying...");
+                LogToFile(GetString(@"Retrying"));
                 _retryAccess = false;
                 return;
             }
@@ -192,56 +192,56 @@ namespace SekiroFpsUnlockAndMore
             //string gameFileVersion = FileVersionInfo.GetVersionInfo(procList[0].MainModule.FileName).FileVersion;
 
             _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK, PATTERN_FRAMELOCK_MASK, ' ');
-            Debug.WriteLine("1. Framelock found at: 0x" + _offset_framelock.ToString("X"));
+            Debug.WriteLine($@"1. Framelock found at: 0x{_offset_framelock:X}");
             if (!IsValid(_offset_framelock))
             {
                 _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK_FUZZY, PATTERN_FRAMELOCK_FUZZY_MASK, ' ') + PATTERN_FRAMELOCK_FUZZY_OFFSET;
-                Debug.WriteLine("2. Framelock found at: 0x" + _offset_framelock.ToString("X"));
+                Debug.WriteLine($@"2. Framelock found at: 0x{_offset_framelock:X}");
             }
             if (!IsValid(_offset_framelock))
             {
-                UpdateStatus("framelock not found...", Brushes.Red);
-                LogToFile("framelock not found...");
-                this.cbUnlockFps.IsEnabled = false;
-                this.cbUnlockFps.IsChecked = false;
+                UpdateStatus(GetString(@"FrameLock404"), Brushes.Red);
+                LogToFile(GetString(@"FrameLock404"));
+                cbUnlockFps.IsEnabled = false;
+                cbUnlockFps.IsChecked = false;
             }
             _offset_framelock_running_fix = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK_RUNNING_FIX, PATTERN_FRAMELOCK_RUNNING_FIX_MASK, ' ') + PATTERN_FRAMELOCK_RUNNING_FIX_OFFSET;
-            Debug.WriteLine("Running fix found at: 0x" + _offset_framelock_running_fix.ToString("X"));
+            Debug.WriteLine($@"Running fix found at: 0x{_offset_framelock_running_fix:X}");
             if (!IsValid(_offset_framelock_running_fix))
             {
-                UpdateStatus("running fix not found...", Brushes.Red);
-                LogToFile("running fix not found...");
-                this.cbAddWidescreen.IsEnabled = false;
-                this.cbAddWidescreen.IsChecked = false;
+                UpdateStatus(GetString(@"RunningFix404"), Brushes.Red);
+                LogToFile(GetString(@"RunningFix404"));
+                cbAddWidescreen.IsEnabled = false;
+                cbAddWidescreen.IsChecked = false;
             }
 
             _offset_resolution = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_RESOLUTION, PATTERN_RESOLUTION_MASK, ' ');
-            Debug.WriteLine("Resolution found at: 0x" + _offset_resolution.ToString("X"));
+            Debug.WriteLine($@"Resolution found at: 0x{_offset_resolution:X}");
             if (!IsValid(_offset_resolution))
             {
-                UpdateStatus("resolution not found...", Brushes.Red);
-                LogToFile("resolution not found...");
-                this.cbAddWidescreen.IsEnabled = false;
-                this.cbAddWidescreen.IsChecked = false;
+                UpdateStatus(GetString(@"Resolution404"), Brushes.Red);
+                LogToFile(GetString(@"Resolution404"));
+                cbAddWidescreen.IsEnabled = false;
+                cbAddWidescreen.IsChecked = false;
             }
             _offset_widescreen_219 = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_WIDESCREEN_219, PATTERN_WIDESCREEN_219_MASK, ' ');
-            Debug.WriteLine("Widescreen 21/9 found at: 0x" + _offset_widescreen_219.ToString("X"));
+            Debug.WriteLine($@"Widescreen 21/9 found at: 0x{_offset_widescreen_219:X}");
             if (!IsValid(_offset_widescreen_219))
             {
-                UpdateStatus("widescreen 21/9 not found...", Brushes.Red);
-                LogToFile("Widescreen 21/9 not found...");
-                this.cbAddWidescreen.IsEnabled = false;
-                this.cbAddWidescreen.IsChecked = false;
+                UpdateStatus(GetString(@"Widescreen404"), Brushes.Red);
+                LogToFile(GetString(@"Widescreen404"));
+                cbAddWidescreen.IsEnabled = false;
+                cbAddWidescreen.IsChecked = false;
             }
 
             _offset_fovsetting = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FOVSETTING, PATTERN_FOVSETTING_MASK, ' ') + PATTERN_FOVSETTING_OFFSET;
-            Debug.WriteLine("FOV found at: 0x" + _offset_fovsetting.ToString("X"));
+            Debug.WriteLine($@"FOV found at: 0x{_offset_fovsetting:X}");
             if (!IsValid(_offset_fovsetting))
             {
-                UpdateStatus("FOV not found...", Brushes.Red);
-                LogToFile("FOV not found...");
-                this.cbFov.IsEnabled = false;
-                this.cbFov.IsChecked = false;
+                UpdateStatus(GetString(@"Fov404"), Brushes.Red);
+                LogToFile(GetString(@"Fov404"));
+                cbFov.IsEnabled = false;
+                cbFov.IsChecked = false;
             }
 
             GetWindowRect(_gameHwnd, out _windowRect);
@@ -270,122 +270,120 @@ namespace SekiroFpsUnlockAndMore
                 _offset_resolution = 0x0;
                 _offset_widescreen_219 = 0x0;
                 _offset_fovsetting = 0x0;
-                UpdateStatus("waiting for game...", Brushes.White);
+                UpdateStatus(GetString(@"WaitStatus"), Brushes.White);
                 _dispatcherTimerCheck.Start();
                 return;
             }
 
-            if (this.cbUnlockFps.IsChecked == true)
+            if (cbUnlockFps.IsChecked == true)
             {
-                int fps = -1;
-                bool isNumber = int.TryParse(this.tbFps.Text, out fps);
+                var isNumber = int.TryParse(tbFps.Text, out var fps);
                 if (fps < 0 || !isNumber)
                 {
-                    this.tbFps.Text = "60";
+                    tbFps.Text = "60";
                     fps = 60;
                 }
                 else if (fps > 0 && fps < 30)
                 {
-                    this.tbFps.Text = "30";
+                    tbFps.Text = "30";
                     fps = 30;
                 }
                 else if (fps > 300)
                 {
-                    this.tbFps.Text = "300";
+                    tbFps.Text = "300";
                     fps = 300;
                 }
 
                 if (fps == 0)
                 {
                     WriteBytes(_gameProcStatic, _offset_framelock, PATCH_FRAMERATE_UNLIMITED);
-                    WriteBytes(_gameProcStatic, _offset_framelock_running_fix, new byte[1] { 0xF8 }); // F8 is maximum
+                    WriteBytes(_gameProcStatic, _offset_framelock_running_fix, new byte[] { 0xF8 }); // F8 is maximum
                 }
                 else
                 {
-                    int speed = 144 + (int)Math.Ceiling((fps - 60) / 16f) * 8; // calculation from game functions
+                    var speed = 144 + (int)Math.Ceiling((fps - 60) / 16f) * 8; // calculation from game functions
                     if (speed > 248)
                         speed = 248;
-                    float deltaTime = (1000f / fps) / 1000f;
+                    var deltaTime = 1000f / fps / 1000f;
                     Debug.WriteLine("Deltatime hex: 0x" + getHexRepresentationFromFloat(deltaTime));
                     Debug.WriteLine("Speed hex: 0x" + speed.ToString("X"));
                     WriteBytes(_gameProcStatic, _offset_framelock, BitConverter.GetBytes(deltaTime));
-                    WriteBytes(_gameProcStatic, _offset_framelock_running_fix, new byte[] { (byte)Convert.ToInt16(speed) });
+                    WriteBytes(_gameProcStatic, _offset_framelock_running_fix, new[] { (byte)Convert.ToInt16(speed) });
                 }
             }
-            else if (this.cbUnlockFps.IsChecked == false)
+            else if (cbUnlockFps.IsChecked == false)
             {
-                float deltaTime = (1000f / 60) / 1000f;
+                var deltaTime = 1000f / 60 / 1000f;
                 WriteBytes(_gameProcStatic, _offset_framelock, BitConverter.GetBytes(deltaTime));
                 WriteBytes(_gameProcStatic, _offset_framelock_running_fix, PATCH_FRAMERATE_RUNNING_FIX_DISABLE);
             }
 
-            if (this.cbAddWidescreen.IsChecked == true)
+            if (cbAddWidescreen.IsChecked == true)
             {
-                int width = -1;
-                bool isNumber = int.TryParse(this.tbWidth.Text, out width);
+                var isNumber = int.TryParse(tbWidth.Text, out var width);
                 if (width < 800 || !isNumber)
                 {
-                    this.tbWidth.Text = "2560";
+                    tbWidth.Text = "2560";
                     width = 2560;
                 }
                 else if (width > 5760)
                 {
-                    this.tbWidth.Text = "5760";
+                    tbWidth.Text = "5760";
                     width = 5760;
                 }
-                int height = -1;
-                isNumber = int.TryParse(this.tbHeight.Text, out height);
+
+                isNumber = int.TryParse(tbHeight.Text, out var height);
                 if (height < 450 || !isNumber)
                 {
-                    this.tbHeight.Text = "1080";
+                    tbHeight.Text = "1080";
                     height = 1080;
                 }
                 else if (height > 2160)
                 {
-                    this.tbHeight.Text = "2160";
+                    tbHeight.Text = "2160";
                     height = 2160;
                 }
                 WriteBytes(_gameProcStatic, _offset_resolution, BitConverter.GetBytes(width));
                 WriteBytes(_gameProcStatic, _offset_resolution + 4, BitConverter.GetBytes(height));
                 WriteBytes(_gameProcStatic, _offset_widescreen_219, (float)width / (float)height > 1.9f ? PATCH_WIDESCREEN_219_ENABLE : PATCH_WIDESCREEN_219_DISABLE);
             }
-            else if (this.cbAddWidescreen.IsChecked == false)
+            else if (cbAddWidescreen.IsChecked == false)
             {
                 WriteBytes(_gameProcStatic, _offset_resolution, BitConverter.GetBytes(1920));
                 WriteBytes(_gameProcStatic, _offset_resolution + 4, BitConverter.GetBytes(1080));
                 WriteBytes(_gameProcStatic, _offset_widescreen_219, PATCH_WIDESCREEN_219_DISABLE);
             }
 
-            if (this.cbFov.IsChecked == true)
+            if (cbFov.IsChecked == true)
             {
-                byte[] fovByte = new byte[1];
-                fovByte[0] = ((KeyValuePair<byte, string>)this.cbSelectFov.SelectedItem).Key;
+                var fovByte = new byte[1];
+                fovByte[0] = ((KeyValuePair<byte, string>)cbSelectFov.SelectedItem).Key;
                 WriteBytes(_gameProcStatic, _offset_fovsetting, fovByte);
             }
-            else if (this.cbFov.IsChecked == false)
+            else if (cbFov.IsChecked == false)
             {
                 WriteBytes(_gameProcStatic, _offset_fovsetting, PATCH_FOV_DISABLE);
             }
 
-            if (this.cbBorderless.IsChecked == true)
+            if (cbBorderless.IsChecked == true)
             {
                 if (!IsFullscreen(_gameHwnd))
                     SetWindowBorderless(_gameHwnd);
                 else
                 {
-                    MessageBox.Show("Please exit fullscreen first before activating borderless window mode.", "Sekiro FPS Unlocker and more");
-                    this.cbBorderless.IsChecked = false;
+                    MessageBox.Show(GetString(@"BorderlessFailed"), GetString(@"AppTitle"));
+                    cbBorderless.IsChecked = false;
                 }
             }
-            else if (this.cbBorderless.IsChecked == false && !IsFullscreen(_gameHwnd))
+            else if (cbBorderless.IsChecked == false && !IsFullscreen(_gameHwnd))
             {
                 SetWindowWindowed(_gameHwnd);
             }
 
-            if (this.cbUnlockFps.IsChecked == true || this.cbAddWidescreen.IsChecked == true || this.cbFov.IsChecked == true)
-                UpdateStatus(DateTime.Now.ToString("HH:mm:ss") + " Game patched!", Brushes.Green);
+            if (cbUnlockFps.IsChecked == true || cbAddWidescreen.IsChecked == true || cbFov.IsChecked == true)
+                UpdateStatus($@"{DateTime.Now} {GetString(@"GamePatched")}", Brushes.Green);
             else
-                UpdateStatus(DateTime.Now.ToString("HH:mm:ss") + " Game unpatched!", Brushes.White);
+                UpdateStatus($@"{DateTime.Now} {GetString(@"GameUnPatched")}", Brushes.White);
         }
 
         /// <summary>
@@ -395,8 +393,8 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>The hexadecimal representation of the input</returns>
         private string getHexRepresentationFromFloat(float input)
         {
-            uint f = BitConverter.ToUInt32(BitConverter.GetBytes(input), 0);
-            return "0x" + f.ToString("X8");
+            var f = BitConverter.ToUInt32(BitConverter.GetBytes(input), 0);
+            return $@"0x{f:X8}";
         }
 
         /// <summary>
@@ -409,8 +407,8 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>True if window is run in fullscreen mode.</returns>
         private bool IsFullscreen(IntPtr hwnd)
         {
-            long wndStyle = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
-            long wndExStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+            var wndStyle = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
+            var wndExStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
 
             if (wndStyle == 0 || wndExStyle == 0)
                 return false;
@@ -435,7 +433,7 @@ namespace SekiroFpsUnlockAndMore
         {
             var width = _windowRect.Right - _windowRect.Left;
             var height = _windowRect.Bottom - _windowRect.Top;
-            Debug.WriteLine(string.Format("Window Resolution: {0}x{1}", width, height));
+            Debug.WriteLine($@"Window Resolution: {width}x{height}");
             SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_CAPTION | WS_BORDER | WS_CLIPSIBLINGS | WS_DLGFRAME | WS_SYSMENU | WS_GROUP | WS_MINIMIZEBOX);
             SetWindowPos(hwnd, HWND_NOTOPMOST, 40, 40, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         }
@@ -448,7 +446,7 @@ namespace SekiroFpsUnlockAndMore
         {
             var width = _clientRect.Right - _clientRect.Left;
             var height = _clientRect.Bottom - _clientRect.Top;
-            Debug.WriteLine(string.Format("Client Resolution: {0}x{1}", width, height));
+            Debug.WriteLine($@"Client Resolution: {width}x{height}");
             SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
             SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         }
@@ -460,7 +458,7 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>True if pointer points to a valid address.</returns>
         private static bool IsValid(long address)
         {
-            return (address >= 0x10000 && address < 0x000F000000000000);
+            return address >= 0x10000 && address < 0x000F000000000000;
         }
 
         /// <summary>
@@ -472,8 +470,7 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>True if successful, false otherwise.</returns>
         private static bool WriteBytes(IntPtr gameProc, long lpBaseAddress, byte[] bytes)
         {
-            IntPtr lpNumberOfBytesWritten;
-            return WriteProcessMemory(gameProc, lpBaseAddress, bytes, (ulong)bytes.Length, out lpNumberOfBytesWritten);
+            return WriteProcessMemory(gameProc, lpBaseAddress, bytes, (ulong)bytes.Length, out _);
         }
 
         /// <summary>
@@ -483,13 +480,13 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>True if inout is numeric only.</returns>
         private bool IsNumericInput(string text)
         {
-            return Regex.IsMatch(text, "[^0-9]+");
+            return Regex.IsMatch(text, @"[^0-9]+");
         }
 
         private void UpdateStatus(string text, Brush color)
         {
-            this.tbStatus.Background = color;
-            this.tbStatus.Text = text;
+            tbStatus.Background = color;
+            tbStatus.Text = text;
         }
 
         private void Numeric_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -501,7 +498,7 @@ namespace SekiroFpsUnlockAndMore
         {
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
-                string text = (string)e.DataObject.GetData(typeof(string));
+                var text = (string)e.DataObject.GetData(typeof(string));
                 if (IsNumericInput(text)) e.CancelCommand();
             }
             else e.CancelCommand();
@@ -526,18 +523,18 @@ namespace SekiroFpsUnlockAndMore
         // log messages to file
         private void LogToFile(string msg)
         {
-            string timedMsg = "[" + DateTime.Now + "] " + msg;
+            var timedMsg = $@"[{DateTime.Now}] {msg}";
             Debug.WriteLine(timedMsg);
             try
             {
-                using (StreamWriter writer = new StreamWriter(_logPath, true))
+                using (var writer = new StreamWriter(_logPath, true))
                 {
                     writer.WriteLine(timedMsg);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Writing to log file failed: " + ex.Message, "Sekiro Fps Unlock And More");
+                MessageBox.Show($@"{GetString(@"LogFileFail")}{ex.Message}", GetString(@"AppTitle"));
             }
         }
 

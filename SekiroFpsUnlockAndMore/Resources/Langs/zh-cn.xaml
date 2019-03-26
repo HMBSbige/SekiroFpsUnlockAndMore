@@ -8,7 +8,7 @@
     <system:String x:Key="AddFov">增加 FOV:</system:String>
     <system:String x:Key="Borderless">无边框窗口模式</system:String>
     <system:String x:Key="Patch">注入游戏 (CTRL + P)</system:String>
-    <system:String x:Key="WaitStatus">等待游戏...</system:String>
+    <system:String x:Key="WaitStatus">等待游戏启动...</system:String>
     <system:String x:Key="R1">如果你的显示器是 60 Hz 的，你必须在 NVIDIA 控制面板或 AMD Radeon Settings 上</system:String>
     <system:String x:Key="R2">启用全屏模式和强制禁用垂直同步</system:String>
     <system:String x:Key="R3">才能使解锁帧数的功能正常工作。</system:String>
@@ -24,4 +24,22 @@
     <system:String x:Key="R13">有关详细信息、GSYNC 支持和 AMD 修复，请参阅以下链接。</system:String>
     <system:String x:Key="Version">v1.0.1 - Translate by HMBSbige</system:String>
     <system1:Uri x:Key="Link">https://github.com/HMBSbige/SekiroFpsUnlockAndMore</system1:Uri>
+    <system:String x:Key="LogFileFail">写入日志文件失败：</system:String>
+    <system:String x:Key="GamePatched">游戏注入！</system:String>
+    <system:String x:Key="GameUnPatched">游戏未注入！</system:String>
+    <system:String x:Key="BorderlessFailed">请退出全屏模式后再启用无边框窗口模式</system:String>
+    <system:String x:Key="HotkeyFailed">热键被占用</system:String>
+    <system:String x:Key="Fov404">未找到 FOV 地址</system:String>
+    <system:String x:Key="Widescreen404">未找到宽屏 21:9 地址</system:String>
+    <system:String x:Key="Resolution404">未找到分辨率地址</system:String>
+    <system:String x:Key="RunningFix404">未找到运行修复地址</system:String>
+    <system:String x:Key="FrameLock404">未找到锁帧地址</system:String>
+    <system:String x:Key="Retrying">重试中...</system:String>
+    <system:String x:Key="NoAccess">无法访问游戏进程</system:String>
+    <system:String x:Key="Hwnd">句柄</system:String>
+    <system:String x:Key="Proc">进程</system:String>
+    <system:String x:Key="Base">基址</system:String>
+    <system:String x:Key="NoProcess">未发现有效游戏进程</system:String>
+    <system:String x:Key="Description">说明</system:String>
+    <system:String x:Key="Data">数据</system:String>
 </ResourceDictionary>

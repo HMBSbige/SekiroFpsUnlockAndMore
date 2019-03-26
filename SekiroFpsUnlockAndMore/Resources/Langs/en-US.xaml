@@ -24,4 +24,22 @@
     <system:String x:Key="R13">See the link below for detailed information, GSYNC support and an AMD fix.</system:String>
     <system:String x:Key="Version">v1.0.1 - by uberhalit</system:String>
     <system1:Uri x:Key="Link">https://github.com/uberhalit/SekiroFpsUnlockAndMore</system1:Uri>
+    <system:String x:Key="LogFileFail">Writing to log file failed:</system:String>
+    <system:String x:Key="GamePatched">Game patched!</system:String>
+    <system:String x:Key="GameUnPatched">Game unpatched!</system:String>
+    <system:String x:Key="BorderlessFailed">Please exit fullscreen first before activating borderless window mode.</system:String>
+    <system:String x:Key="HotkeyFailed">Hotkey is already in use, it may not work.</system:String>
+    <system:String x:Key="Fov404">FOV not found...</system:String>
+    <system:String x:Key="Widescreen404">Widescreen 21/9 not found...</system:String>
+    <system:String x:Key="Resolution404">resolution not found...</system:String>
+    <system:String x:Key="RunningFix404">running fix not found...</system:String>
+    <system:String x:Key="FrameLock404">framelock not found...</system:String>
+    <system:String x:Key="Retrying">retrying...</system:String>
+    <system:String x:Key="NoAccess">no access to game...</system:String>
+    <system:String x:Key="Hwnd">Hwnd</system:String>
+    <system:String x:Key="Proc">Proc</system:String>
+    <system:String x:Key="Base">Base</system:String>
+    <system:String x:Key="NoProcess">no valid game process found...</system:String>
+    <system:String x:Key="Description">Description</system:String>
+    <system:String x:Key="Data">Data</system:String>
 </ResourceDictionary>
