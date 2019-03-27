@@ -17,13 +17,13 @@ namespace SekiroFpsUnlockAndMore
         /// <returns>The address of the beginning of the pattern if found, 0 if not found</returns>
         internal static Int64 FindPattern(IntPtr hProcess, ProcessModule pModule, string szPattern, string szMask, char cDelimiter = ' ')
         {
-            string[] saPattern = szPattern.Split(cDelimiter);
-            byte[] bPattern = new byte[saPattern.Length];
-            for (int i = 0; i < saPattern.Length; i++)
+            var saPattern = szPattern.Split(cDelimiter);
+            var bPattern = new byte[saPattern.Length];
+            for (var i = 0; i < saPattern.Length; i++)
                 bPattern[i] = Convert.ToByte(saPattern[i], 0x10);
 
             if (bPattern == null || bPattern.Length == 0)
-                throw new ArgumentNullException("Pattern's length is zero!");
+                throw new ArgumentNullException(nameof(szPattern), @"Pattern's length is zero!");
             if (bPattern.Length != szMask.Length)
                 throw new ArgumentException("Pattern's bytes and szMask must be of the same size!");
 
@@ -32,12 +32,11 @@ namespace SekiroFpsUnlockAndMore
                 dwStart = (uint)pModule.BaseAddress;
             else if (IntPtr.Size == 8)
                 dwStart = (long)pModule.BaseAddress;
-            int nSize = pModule.ModuleMemorySize;
+            var nSize = pModule.ModuleMemorySize;
 
-            IntPtr lpNumberOfBytesRead;
-            byte[] bData = new byte[nSize];
+            var bData = new byte[nSize];
 
-            if (!ReadProcessMemory(hProcess, dwStart, bData, nSize, out lpNumberOfBytesRead))
+            if (!ReadProcessMemory(hProcess, dwStart, bData, nSize, out var lpNumberOfBytesRead))
                 throw new Exception("ReadProcessMemory error!");
             if (lpNumberOfBytesRead.ToInt64() != nSize)
                 throw new Exception("ReadProcessMemory error!");
@@ -45,25 +44,24 @@ namespace SekiroFpsUnlockAndMore
                 throw new Exception("Could not read memory in FindPattern.");
 
             long ix;
-            int iy;
-            bool bFound = false;
-            int patternLength = bPattern.Length;
-            int dataLength = bData.Length - patternLength;
+            var patternLength = bPattern.Length;
+            var dataLength = bData.Length - patternLength;
 
             for (ix = 0; ix < dataLength; ix++)
             {
-                bFound = true;
+                var bFound = true;
+                int iy;
                 for (iy = 0; iy < patternLength; iy++)
                 {
-                    if ((szMask[iy] == 'x' && bPattern[iy] != bData[ix + iy]) ||
-                        (szMask[iy] == '!' && bPattern[iy] == bData[ix + iy]))
+                    if (szMask[iy] == 'x' && bPattern[iy] != bData[ix + iy] ||
+                        szMask[iy] == '!' && bPattern[iy] == bData[ix + iy])
                     {
                         bFound = false;
                         break;
                     }
                 }
                 if (bFound)
-                    return Convert.ToInt64((long)dwStart + ix);
+                    return Convert.ToInt64(dwStart + ix);
             }
             return 0;
         }

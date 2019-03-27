@@ -6,7 +6,8 @@
     <system:String x:Key="UnlockFps">FPS 锁定 (0 = 不限制):</system:String>
     <system:String x:Key="AddWidescreen">自定义分辨率:</system:String>
     <system:String x:Key="AddFov">增加 FOV:</system:String>
-    <system:String x:Key="Borderless">无边框窗口模式</system:String>
+    <system:String x:Key="Borderless">无边框窗口化</system:String>
+    <system:String x:Key="BorderlessStretch">全屏拉伸</system:String>
     <system:String x:Key="Patch">注入游戏 (CTRL + P)</system:String>
     <system:String x:Key="WaitStatus">等待游戏启动...</system:String>
     <system:String x:Key="R1">如果你的显示器是 60 Hz 的，你必须在 NVIDIA 控制面板或 AMD Radeon Settings 上</system:String>
@@ -31,7 +32,9 @@
     <system:String x:Key="HotkeyFailed">热键被占用</system:String>
     <system:String x:Key="Fov404">未找到 FOV 地址</system:String>
     <system:String x:Key="Widescreen404">未找到宽屏 21:9 地址</system:String>
-    <system:String x:Key="Resolution404">未找到分辨率地址</system:String>
+    <system:String x:Key="Resolution404">未找到默认分辨率</system:String>
+    <system:String x:Key="ResolutionPointer404">未找到分辨率地址</system:String>
+    <system:String x:Key="ResolutionNotValid">分辨率无效</system:String>
     <system:String x:Key="RunningFix404">未找到运行修复地址</system:String>
     <system:String x:Key="FrameLock404">未找到锁帧地址</system:String>
     <system:String x:Key="Retrying">重试中...</system:String>

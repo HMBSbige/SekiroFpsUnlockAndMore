@@ -18,55 +18,37 @@ namespace SekiroFpsUnlockAndMore
         internal const string PROCESS_NAME = "sekiro";
         internal const string PROCESS_TITLE = "Sekiro";
         internal const string PROCESS_DESCRIPTION = "Shadows Die Twice";
-
-        internal const string PATTERN_FRAMELOCK = "00 88 88 3C 4C 89 AB 00"; // ?? 88 88 3C 4C 89 AB ?? // pattern/signature of frame rate limiter, first byte (last in mem) can can be 88/90 instead of 89 due to precision loss on floating point numbers
-        internal const string PATTERN_FRAMELOCK_MASK = "?xxxxxx?"; // mask for frame rate limiter signature scanning
-        internal const string PATTERN_FRAMELOCK_LONG = "44 88 6B 00 C7 43 00 89 88 88 3C 4C 89 AB 00 00 00 00"; // 44 88 6B ?? C7 43 ?? 89 88 88 3C 4C 89 AB ?? ?? ?? ??
-        internal const string PATTERN_FRAMELOCK_LONG_MASK = "xxx?xx?xxxxxxx????";
-        internal const int PATTERN_FRAMELOCK_LONG_OFFSET = 7;
-        internal const string PATTERN_FRAMELOCK_FUZZY = "C7 43 00 00 00 00 00 4C 89 AB 00 00 00 00";  // C7 43 ?? ?? ?? ?? ?? 4C 89 AB ?? ?? ?? ??
-        internal const string PATTERN_FRAMELOCK_FUZZY_MASK = "xx?????xxx????";
-        internal const int PATTERN_FRAMELOCK_FUZZY_OFFSET = 3; // offset to byte array from found position
-        internal const string PATTERN_FRAMELOCK_RUNNING_FIX = "F3 0F 59 05 00 30 92 02 0F 2F F8"; // F3 0F 59 05 ?? 30 92 02 0F 2F F8 | 0F 51 C2 F3 0F 59 05 ?? ?? ?? ?? 0F 2F F8
-        internal const string PATTERN_FRAMELOCK_RUNNING_FIX_MASK = "xxxx?xxxxxx";
-        internal const int PATTERN_FRAMELOCK_RUNNING_FIX_OFFSET = 4;
-        internal const string PATTERN_RESOLUTION = "80 07 00 00 38 04"; // 1920x1080
-        internal const string PATTERN_RESOLUTION_MASK = "xxxxxx";
-        internal const string PATTERN_WIDESCREEN_219 = "00 47 47 8B 94 C7 1C 02 00 00"; // ?? 47 47 8B 94 C7 1C 02 00 00
-        internal const string PATTERN_WIDESCREEN_219_MASK = "?xxxxxxxxx";
         internal byte[] PATCH_FRAMERATE_RUNNING_FIX_DISABLE = { 0x90 };
         internal byte[] PATCH_FRAMERATE_UNLIMITED = { 0x00, 0x00, 0x00, 0x00 };
         internal byte[] PATCH_WIDESCREEN_219_DISABLE = { 0x74 };
         internal byte[] PATCH_WIDESCREEN_219_ENABLE = { 0xEB };
         internal byte[] PATCH_FOV_DISABLE = { 0x0C };
-
-        // credits to jackfuste for FOV findings
-        internal const string PATTERN_FOVSETTING = "F3 0F 10 08 F3 0F 59 0D 00 E7 9B 02"; // F3 0F 10 08 F3 0F 59 0D ?? E7 9B 02
-        internal const string PATTERN_FOVSETTING_MASK = "xxxxxxxx?xxx";
-        internal const int PATTERN_FOVSETTING_OFFSET = 8;
-        internal Dictionary<byte, string> _fovMatrix = new Dictionary<byte, string>
+        internal Dictionary<byte, string> PATCH_FOVMATRIX = new Dictionary<byte, string>
         {
+            { 0x00, "- 50%" },
+            { 0x04, "- 10%" },
             { 0x10, "+ 15%" },
             { 0x14, "+ 40%" },
             { 0x18, "+ 75%" },
             { 0x1C, "+ 90%" },
         };
 
-        internal long _offset_framelock = 0x0;
-        internal long _offset_framelock_running_fix = 0x0;
-        internal long _offset_resolution = 0x0;
-        internal long _offset_widescreen_219 = 0x0;
-        internal long _offset_fovsetting = 0x0;
-        internal bool _running = false;
         internal Process _game;
         internal IntPtr _gameHwnd = IntPtr.Zero;
         internal IntPtr _gameProc = IntPtr.Zero;
         internal static IntPtr _gameProcStatic;
+        internal long _offset_framelock = 0x0;
+        internal long _offset_framelock_running_fix = 0x0;
+        internal long _offset_resolution = 0x0;
+        internal long _offset_resolution_default = 0x0;
+        internal long _offset_widescreen_219 = 0x0;
+        internal long _offset_fovsetting = 0x0;
+
         internal readonly DispatcherTimer _dispatcherTimerCheck = new DispatcherTimer();
+        internal bool _running = false;
         internal string _logPath;
         internal bool _retryAccess = true;
         internal RECT _windowRect;
-        internal RECT _clientRect;
 
         public MainWindow()
         {
@@ -82,8 +64,8 @@ namespace SekiroFpsUnlockAndMore
 
             _logPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\SekiroFpsUnlockAndMore.log";
 
-            cbSelectFov.ItemsSource = _fovMatrix;
-            cbSelectFov.SelectedIndex = 0;
+            cbSelectFov.ItemsSource = PATCH_FOVMATRIX;
+            cbSelectFov.SelectedIndex = 2;
 
             var hwnd = new WindowInteropHelper(this).Handle;
             if (!RegisterHotKey(hwnd, 9009, MOD_CONTROL, VK_P))
@@ -93,7 +75,7 @@ namespace SekiroFpsUnlockAndMore
             ComponentDispatcher.ThreadFilterMessage += ComponentDispatcherThreadFilterMessage;
 
             _dispatcherTimerCheck.Tick += CheckGame;
-            _dispatcherTimerCheck.Interval = new TimeSpan(0, 0, 0, 3);
+            _dispatcherTimerCheck.Interval = new TimeSpan(0, 0, 0, 2);
             _dispatcherTimerCheck.Start();
         }
 
@@ -191,11 +173,11 @@ namespace SekiroFpsUnlockAndMore
 
             //string gameFileVersion = FileVersionInfo.GetVersionInfo(procList[0].MainModule.FileName).FileVersion;
 
-            _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK, PATTERN_FRAMELOCK_MASK, ' ');
+            _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_FRAMELOCK, Offsets.PATTERN_FRAMELOCK_MASK);
             Debug.WriteLine($@"1. Framelock found at: 0x{_offset_framelock:X}");
             if (!IsValid(_offset_framelock))
             {
-                _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK_FUZZY, PATTERN_FRAMELOCK_FUZZY_MASK, ' ') + PATTERN_FRAMELOCK_FUZZY_OFFSET;
+                _offset_framelock = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_FRAMELOCK_FUZZY, Offsets.PATTERN_FRAMELOCK_FUZZY_MASK) + Offsets.PATTERN_FRAMELOCK_FUZZY_OFFSET;
                 Debug.WriteLine($@"2. Framelock found at: 0x{_offset_framelock:X}");
             }
             if (!IsValid(_offset_framelock))
@@ -205,7 +187,7 @@ namespace SekiroFpsUnlockAndMore
                 cbUnlockFps.IsEnabled = false;
                 cbUnlockFps.IsChecked = false;
             }
-            _offset_framelock_running_fix = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FRAMELOCK_RUNNING_FIX, PATTERN_FRAMELOCK_RUNNING_FIX_MASK, ' ') + PATTERN_FRAMELOCK_RUNNING_FIX_OFFSET;
+            _offset_framelock_running_fix = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_FRAMELOCK_RUNNING_FIX, Offsets.PATTERN_FRAMELOCK_RUNNING_FIX_MASK) + Offsets.PATTERN_FRAMELOCK_RUNNING_FIX_OFFSET;
             Debug.WriteLine($@"Running fix found at: 0x{_offset_framelock_running_fix:X}");
             if (!IsValid(_offset_framelock_running_fix))
             {
@@ -215,16 +197,16 @@ namespace SekiroFpsUnlockAndMore
                 cbAddWidescreen.IsChecked = false;
             }
 
-            _offset_resolution = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_RESOLUTION, PATTERN_RESOLUTION_MASK, ' ');
-            Debug.WriteLine($@"Resolution found at: 0x{_offset_resolution:X}");
-            if (!IsValid(_offset_resolution))
+            _offset_resolution_default = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_RESOLUTION_DEFAULT, Offsets.PATTERN_RESOLUTION_DEFAULT_MASK);
+            Debug.WriteLine($@"Default resolution found at: 0x{_offset_resolution_default:X}");
+            if (!IsValid(_offset_resolution_default))
             {
                 UpdateStatus(GetString(@"Resolution404"), Brushes.Red);
                 LogToFile(GetString(@"Resolution404"));
                 cbAddWidescreen.IsEnabled = false;
                 cbAddWidescreen.IsChecked = false;
             }
-            _offset_widescreen_219 = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_WIDESCREEN_219, PATTERN_WIDESCREEN_219_MASK, ' ');
+            _offset_widescreen_219 = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_WIDESCREEN_219, Offsets.PATTERN_WIDESCREEN_219_MASK);
             Debug.WriteLine($@"Widescreen 21/9 found at: 0x{_offset_widescreen_219:X}");
             if (!IsValid(_offset_widescreen_219))
             {
@@ -234,7 +216,29 @@ namespace SekiroFpsUnlockAndMore
                 cbAddWidescreen.IsChecked = false;
             }
 
-            _offset_fovsetting = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, PATTERN_FOVSETTING, PATTERN_FOVSETTING_MASK, ' ') + PATTERN_FOVSETTING_OFFSET;
+            long offset_resolution_pointer = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_RESOLUTION_POINTER, Offsets.PATTERN_RESOLUTION_POINTER_MASK) + Offsets.PATTERN_RESOLUTION_POINTER_OFFSET;
+            Debug.WriteLine($@"Resolution pointer found at: 0x{offset_resolution_pointer:X}");
+            if (!IsValid(offset_resolution_pointer))
+            {
+                UpdateStatus(GetString(@"ResolutionPointer404"), Brushes.Red);
+                LogToFile(GetString(@"ResolutionPointer404"));
+                cbBorderless.IsEnabled = false;
+                cbBorderless.IsChecked = false;
+            }
+            else
+            {
+                _offset_resolution = FindOffsetToStaticPointer(_gameProc, offset_resolution_pointer, Offsets.PATTERN_RESOLUTION_POINTER_INSTRUCTION_LENGTH);
+                Debug.WriteLine($@"Resolution found at: 0x{_offset_resolution:X}");
+                if (!IsValid(_offset_resolution))
+                {
+                    UpdateStatus(GetString(@"ResolutionNotValid"), Brushes.Red);
+                    LogToFile(GetString(@"ResolutionNotValid"));
+                    cbBorderless.IsEnabled = false;
+                    cbBorderless.IsChecked = false;
+                }
+            }
+
+            _offset_fovsetting = PatternScan.FindPattern(_gameProc, procList[gameIndex].MainModule, Offsets.PATTERN_FOVSETTING, Offsets.PATTERN_FOVSETTING_MASK) + Offsets.PATTERN_FOVSETTING_OFFSET;
             Debug.WriteLine($@"FOV found at: 0x{_offset_fovsetting:X}");
             if (!IsValid(_offset_fovsetting))
             {
@@ -244,8 +248,6 @@ namespace SekiroFpsUnlockAndMore
                 cbFov.IsChecked = false;
             }
 
-            GetWindowRect(_gameHwnd, out _windowRect);
-            GetClientRect(_gameHwnd, out _clientRect);
             _running = true;
             _dispatcherTimerCheck.Stop();
             PatchGame();
@@ -280,17 +282,17 @@ namespace SekiroFpsUnlockAndMore
                 var isNumber = int.TryParse(tbFps.Text, out var fps);
                 if (fps < 0 || !isNumber)
                 {
-                    tbFps.Text = "60";
+                    tbFps.Text = @"60";
                     fps = 60;
                 }
                 else if (fps > 0 && fps < 30)
                 {
-                    tbFps.Text = "30";
+                    tbFps.Text = @"30";
                     fps = 30;
                 }
                 else if (fps > 300)
                 {
-                    tbFps.Text = "300";
+                    tbFps.Text = @"300";
                     fps = 300;
                 }
 
@@ -305,8 +307,8 @@ namespace SekiroFpsUnlockAndMore
                     if (speed > 248)
                         speed = 248;
                     var deltaTime = 1000f / fps / 1000f;
-                    Debug.WriteLine("Deltatime hex: 0x" + getHexRepresentationFromFloat(deltaTime));
-                    Debug.WriteLine("Speed hex: 0x" + speed.ToString("X"));
+                    Debug.WriteLine($@"Deltatime hex: 0x{getHexRepresentationFromFloat(deltaTime)}");
+                    Debug.WriteLine($@"Speed hex: 0x{speed:X}");
                     WriteBytes(_gameProcStatic, _offset_framelock, BitConverter.GetBytes(deltaTime));
                     WriteBytes(_gameProcStatic, _offset_framelock_running_fix, new[] { (byte)Convert.ToInt16(speed) });
                 }
@@ -323,34 +325,34 @@ namespace SekiroFpsUnlockAndMore
                 var isNumber = int.TryParse(tbWidth.Text, out var width);
                 if (width < 800 || !isNumber)
                 {
-                    tbWidth.Text = "2560";
+                    tbWidth.Text = @"2560";
                     width = 2560;
                 }
                 else if (width > 5760)
                 {
-                    tbWidth.Text = "5760";
+                    tbWidth.Text = @"5760";
                     width = 5760;
                 }
 
                 isNumber = int.TryParse(tbHeight.Text, out var height);
                 if (height < 450 || !isNumber)
                 {
-                    tbHeight.Text = "1080";
+                    tbHeight.Text = @"1080";
                     height = 1080;
                 }
                 else if (height > 2160)
                 {
-                    tbHeight.Text = "2160";
+                    tbHeight.Text = @"2160";
                     height = 2160;
                 }
-                WriteBytes(_gameProcStatic, _offset_resolution, BitConverter.GetBytes(width));
-                WriteBytes(_gameProcStatic, _offset_resolution + 4, BitConverter.GetBytes(height));
-                WriteBytes(_gameProcStatic, _offset_widescreen_219, (float)width / (float)height > 1.9f ? PATCH_WIDESCREEN_219_ENABLE : PATCH_WIDESCREEN_219_DISABLE);
+                WriteBytes(_gameProcStatic, _offset_resolution_default, BitConverter.GetBytes(width));
+                WriteBytes(_gameProcStatic, _offset_resolution_default + 4, BitConverter.GetBytes(height));
+                WriteBytes(_gameProcStatic, _offset_widescreen_219, PATCH_WIDESCREEN_219_ENABLE);
             }
             else if (cbAddWidescreen.IsChecked == false)
             {
-                WriteBytes(_gameProcStatic, _offset_resolution, BitConverter.GetBytes(1920));
-                WriteBytes(_gameProcStatic, _offset_resolution + 4, BitConverter.GetBytes(1080));
+                WriteBytes(_gameProcStatic, _offset_resolution_default, BitConverter.GetBytes(1920));
+                WriteBytes(_gameProcStatic, _offset_resolution_default + 4, BitConverter.GetBytes(1080));
                 WriteBytes(_gameProcStatic, _offset_widescreen_219, PATCH_WIDESCREEN_219_DISABLE);
             }
 
@@ -367,17 +369,33 @@ namespace SekiroFpsUnlockAndMore
 
             if (cbBorderless.IsChecked == true)
             {
-                if (!IsFullscreen(_gameHwnd))
-                    SetWindowBorderless(_gameHwnd);
-                else
+                if (IsFullscreen(_gameHwnd))
                 {
                     MessageBox.Show(GetString(@"BorderlessFailed"), GetString(@"AppTitle"));
                     cbBorderless.IsChecked = false;
                 }
+                else
+                {
+                    if (!IsBorderless(_gameHwnd))
+                        GetWindowRect(_gameHwnd, out _windowRect);
+                    int width = Read<int>(_gameProc, _offset_resolution);
+                    int height = Read<int>(_gameProc, _offset_resolution + 4);
+                    Debug.WriteLine($@"Client Resolution: {width}x{height}");
+                    if (cbBorderlessStretch.IsChecked == true)
+                        SetWindowBorderless(_gameHwnd, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight, 0, 0);
+                    else
+                        SetWindowBorderless(_gameHwnd, width, height, _windowRect.Left, _windowRect.Top);
+                }
             }
-            else if (cbBorderless.IsChecked == false && !IsFullscreen(_gameHwnd))
+            else if (cbBorderless.IsChecked == false && IsBorderless(_gameHwnd))
             {
-                SetWindowWindowed(_gameHwnd);
+                if (_windowRect.Bottom > 0)
+                {
+                    int width = _windowRect.Right - _windowRect.Left;
+                    int height = _windowRect.Bottom - _windowRect.Top;
+                    Debug.WriteLine($@"Window Resolution: {width}x{height}");
+                    SetWindowWindowed(_gameHwnd, width, height, _windowRect.Left, _windowRect.Top);
+                }
             }
 
             if (cbUnlockFps.IsChecked == true || cbAddWidescreen.IsChecked == true || cbFov.IsChecked == true)
@@ -409,7 +427,6 @@ namespace SekiroFpsUnlockAndMore
         {
             var wndStyle = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
             var wndExStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
-
             if (wndStyle == 0 || wndExStyle == 0)
                 return false;
 
@@ -426,29 +443,55 @@ namespace SekiroFpsUnlockAndMore
         }
 
         /// <summary>
+        /// Checks if window is in borderless window mode.
+        /// </summary>
+        /// <param name="hwnd">The main window handle of the window.</param>
+        /// <remarks>
+        /// Borderless windows have WS_POPUP flag set.
+        /// </remarks>
+        /// <returns>True if window is run in borderless window mode.</returns>
+        private bool IsBorderless(IntPtr hwnd)
+        {
+            long wndStyle = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
+            if (wndStyle == 0)
+                return false;
+
+            if ((wndStyle & WS_POPUP) == 0)
+                return false;
+            if ((wndStyle & WS_CAPTION) != 0)
+                return false;
+            if ((wndStyle & WS_BORDER) != 0)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
         /// Sets a window to ordinary windowed mode
         /// </summary>
         /// <param name="hwnd">The handle to the window.</param>
-        private void SetWindowWindowed(IntPtr hwnd)
+        /// <param name="width">The desired window width.</param>
+        /// <param name="height">The desired window height.</param>
+        /// <param name="posX">The desired X position of the window.</param>
+        /// <param name="posY">The desired Y position of the window.</param>
+        private void SetWindowWindowed(IntPtr hwnd, int width, int height, int posX, int posY)
         {
-            var width = _windowRect.Right - _windowRect.Left;
-            var height = _windowRect.Bottom - _windowRect.Top;
-            Debug.WriteLine($@"Window Resolution: {width}x{height}");
             SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_CAPTION | WS_BORDER | WS_CLIPSIBLINGS | WS_DLGFRAME | WS_SYSMENU | WS_GROUP | WS_MINIMIZEBOX);
-            SetWindowPos(hwnd, HWND_NOTOPMOST, 40, 40, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+            SetWindowPos(hwnd, HWND_NOTOPMOST, posX, posY, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         }
 
         /// <summary>
         /// Sets a window to borderless windowed mode and moves it to position 0x0.
         /// </summary>
         /// <param name="hwnd">The handle to the window.</param>
-        private void SetWindowBorderless(IntPtr hwnd)
+        /// <param name="width">The desired window width.</param>
+        /// <param name="height">The desired window height.</param>
+        /// <param name="posX">The desired X position of the window.</param>
+        /// <param name="posY">The desired Y position of the window.</param>
+        private void SetWindowBorderless(IntPtr hwnd, int width, int height, int posX, int posY)
         {
-            var width = _clientRect.Right - _clientRect.Left;
-            var height = _clientRect.Bottom - _clientRect.Top;
-            Debug.WriteLine($@"Client Resolution: {width}x{height}");
             SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
-            SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+            SetWindowPos(hwnd, HWND_TOP, posX, posY, width, height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         }
 
         /// <summary>
@@ -462,6 +505,24 @@ namespace SekiroFpsUnlockAndMore
         }
 
         /// <summary>
+        /// Reads a given type from processes memory using a generic method.
+        /// </summary>
+        /// <typeparam name="T">The base type to read.</typeparam>
+        /// <param name="gameProc">The process handle to read from.</param>
+        /// <param name="lpBaseAddress">The address to read from.</param>
+        /// <returns>The given base type read from memory.</returns>
+        /// <remarks>GCHandle and Marshal are costy.</remarks>
+        private static T Read<T>(IntPtr gameProc, long lpBaseAddress)
+        {
+            byte[] lpBuffer = new byte[Marshal.SizeOf(typeof(T))];
+            ReadProcessMemory(gameProc, lpBaseAddress, lpBuffer, (ulong)lpBuffer.Length, out _);
+            GCHandle gcHandle = GCHandle.Alloc(lpBuffer, GCHandleType.Pinned);
+            T structure = (T)Marshal.PtrToStructure(gcHandle.AddrOfPinnedObject(), typeof(T));
+            gcHandle.Free();
+            return structure;
+        }
+
+        /// <summary>
         /// Writes a given type and value to processes memory using a generic method.
         /// </summary>
         /// <param name="gameProc">The process handle to read from.</param>
@@ -471,6 +532,19 @@ namespace SekiroFpsUnlockAndMore
         private static bool WriteBytes(IntPtr gameProc, long lpBaseAddress, byte[] bytes)
         {
             return WriteProcessMemory(gameProc, lpBaseAddress, bytes, (ulong)bytes.Length, out _);
+        }
+
+        /// <summary>
+        /// Gets the static offset to a desired object instead of an offset to a pointer.
+        /// </summary>
+        /// <param name="hProcess">Handle to the process in whose memory the pattern has been found.</param>
+        /// <param name="lpPatternAddress">The address where the pattern has been found.</param>
+        /// <param name="instructionLength">The length of the instruction including the 4 bytes pointer</param>
+        /// <remarks>Static pointers in x86-64 are relative offsets from the instruction address. </remarks>
+        /// <returns>The static offset from the process to desired object).</returns>
+        internal static long FindOffsetToStaticPointer(IntPtr hProcess, long lpPatternAddress, int instructionLength)
+        {
+            return lpPatternAddress + Read<int>(hProcess, lpPatternAddress + (instructionLength - 0x04)) + instructionLength;
         }
 
         /// <summary>
@@ -506,6 +580,19 @@ namespace SekiroFpsUnlockAndMore
 
         private void CheckBoxChanged_Handler(object sender, RoutedEventArgs e)
         {
+            PatchGame();
+        }
+
+        private void CbBorderless_Checked(object sender, RoutedEventArgs e)
+        {
+            cbBorderlessStretch.IsEnabled = true;
+            PatchGame();
+        }
+
+        private void CbBorderless_Unchecked(object sender, RoutedEventArgs e)
+        {
+            cbBorderlessStretch.IsEnabled = false;
+            cbBorderlessStretch.IsChecked = false;
             PatchGame();
         }
 
@@ -594,7 +681,8 @@ namespace SekiroFpsUnlockAndMore
         private const uint WS_CAPTION = 0x00C00000;
         private const uint WS_BORDER = 0x00800000;
         private const uint WS_EX_TOPMOST = 0x00000008;
-        private const uint WS_EX_WINDOWEDGE = 0x00000100;
+        private const int HWND_TOP = 0;
+        private const int HWND_TOPMOST = -1;
         private const int HWND_NOTOPMOST = -2;
         private const uint SWP_FRAMECHANGED = 0x0020;
         private const uint SWP_SHOWWINDOW = 0x0040;
@@ -626,9 +714,6 @@ namespace SekiroFpsUnlockAndMore
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
-        [DllImport("user32.dll")]
-        public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
-
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -637,6 +722,14 @@ namespace SekiroFpsUnlockAndMore
             public int Right;       // x position of lower-right corner
             public int Bottom;      // y position of lower-right corner
         }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool ReadProcessMemory(
+            IntPtr hProcess,
+            long lpBaseAddress,
+            [Out] byte[] lpBuffer,
+            ulong dwSize,
+            out IntPtr lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool WriteProcessMemory(

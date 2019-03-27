@@ -6,7 +6,8 @@
     <system:String x:Key="UnlockFps">FPS lock (0= unlimited):</system:String>
     <system:String x:Key="AddWidescreen">Add custom resolution:</system:String>
     <system:String x:Key="AddFov">Increase FOV by:</system:String>
-    <system:String x:Key="Borderless">Borderless window mode</system:String>
+    <system:String x:Key="Borderless">Borderless window</system:String>
+    <system:String x:Key="BorderlessStretch">Fullscreen stretch</system:String>
     <system:String x:Key="Patch">Patch game (CTRL + P)</system:String>
     <system:String x:Key="WaitStatus">waiting for game...</system:String>
     <system:String x:Key="R1">If your monitor is 60 Hz you will have to use</system:String>
@@ -31,7 +32,9 @@
     <system:String x:Key="HotkeyFailed">Hotkey is already in use, it may not work.</system:String>
     <system:String x:Key="Fov404">FOV not found...</system:String>
     <system:String x:Key="Widescreen404">Widescreen 21/9 not found...</system:String>
-    <system:String x:Key="Resolution404">resolution not found...</system:String>
+    <system:String x:Key="Resolution404">default resolution not found...</system:String>
+    <system:String x:Key="ResolutionPointer404">Resolution pointer not found....</system:String>
+    <system:String x:Key="ResolutionNotValid">Resolution not valid...</system:String>
     <system:String x:Key="RunningFix404">running fix not found...</system:String>
     <system:String x:Key="FrameLock404">framelock not found...</system:String>
     <system:String x:Key="Retrying">retrying...</system:String>
