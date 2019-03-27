@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:system1="clr-namespace:System;assembly=System">
-    <system:String x:Key="AppTitle">Sekiro FPS Unlocker and more v1.0.1</system:String>
+    <system:String x:Key="AppTitle">Sekiro FPS Unlocker and more v1.0.2</system:String>
     <system:String x:Key="UnlockFps">FPS lock (0= unlimited):</system:String>
     <system:String x:Key="AddWidescreen">Add custom resolution:</system:String>
     <system:String x:Key="AddFov">Increase FOV by:</system:String>
@@ -23,7 +23,7 @@
     <system:String x:Key="R11">For FOV patch to work you need to be ingame.</system:String>
     <system:String x:Key="R12">FOV patch resets after save game reload.</system:String>
     <system:String x:Key="R13">See the link below for detailed information, GSYNC support and an AMD fix.</system:String>
-    <system:String x:Key="Version">v1.0.1 - by uberhalit</system:String>
+    <system:String x:Key="Version">v1.0.2 - by uberhalit</system:String>
     <system1:Uri x:Key="Link">https://github.com/uberhalit/SekiroFpsUnlockAndMore</system1:Uri>
     <system:String x:Key="LogFileFail">Writing to log file failed:</system:String>
     <system:String x:Key="GamePatched">Game patched!</system:String>

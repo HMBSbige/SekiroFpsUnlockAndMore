@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:system1="clr-namespace:System;assembly=System">
-    <system:String x:Key="AppTitle">只狼 FPS 工具 v1.0.1</system:String>
+    <system:String x:Key="AppTitle">只狼 FPS 工具 v1.0.2</system:String>
     <system:String x:Key="UnlockFps">FPS 锁定 (0 = 不限制):</system:String>
     <system:String x:Key="AddWidescreen">自定义分辨率:</system:String>
     <system:String x:Key="AddFov">增加 FOV:</system:String>
@@ -23,7 +23,7 @@
     <system:String x:Key="R11">FOV 修改必须先进入游戏。</system:String>
     <system:String x:Key="R12">保存的游戏重新加载后 FOV 修改重置。</system:String>
     <system:String x:Key="R13">有关详细信息、GSYNC 支持和 AMD 修复，请参阅以下链接。</system:String>
-    <system:String x:Key="Version">v1.0.1 - Translate by HMBSbige</system:String>
+    <system:String x:Key="Version">v1.0.2 - Translate by HMBSbige</system:String>
     <system1:Uri x:Key="Link">https://github.com/HMBSbige/SekiroFpsUnlockAndMore</system1:Uri>
     <system:String x:Key="LogFileFail">写入日志文件失败：</system:String>
     <system:String x:Key="GamePatched">游戏注入！</system:String>
