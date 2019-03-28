@@ -22,15 +22,15 @@ namespace SekiroFpsUnlockAndMore
         internal byte[] PATCH_FRAMERATE_UNLIMITED = { 0x00, 0x00, 0x00, 0x00 };
         internal byte[] PATCH_WIDESCREEN_219_DISABLE = { 0x74 };
         internal byte[] PATCH_WIDESCREEN_219_ENABLE = { 0xEB };
-        internal byte[] PATCH_FOV_DISABLE = { 0x0C };
-        internal Dictionary<byte, string> PATCH_FOVMATRIX = new Dictionary<byte, string>
+        internal byte[] PATCH_FOV_DISABLE = { 0x0C, 0xE7 };
+        internal Dictionary<byte[], string> PATCH_FOVMATRIX = new Dictionary<byte[], string>
         {
-            { 0x00, "- 50%" },
-            { 0x04, "- 10%" },
-            { 0x10, "+ 15%" },
-            { 0x14, "+ 40%" },
-            { 0x18, "+ 75%" },
-            { 0x1C, "+ 90%" },
+            { new byte[]{0x00, 0xE7}, "- 50%" },
+            { new byte[] {0x04, 0xE7}, "- 10%" },
+            { new byte[] {0x10, 0xE7}, "+ 15%" },
+            { new byte[] {0x14, 0xE7}, "+ 40%" },
+            { new byte[] {0x18, 0xE7}, "+ 75%" },
+            { new byte[] {0x1C, 0xE7}, "+ 90%" },
         };
 
         internal Process _game;
@@ -264,12 +264,16 @@ namespace SekiroFpsUnlockAndMore
             if (_game.HasExited)
             {
                 _running = false;
+                if (_gameProc != IntPtr.Zero)
+                    CloseHandle(_gameProc);
+                _game = null;
                 _gameHwnd = IntPtr.Zero;
                 _gameProc = IntPtr.Zero;
                 _gameProcStatic = IntPtr.Zero;
                 _offset_framelock = 0x0;
                 _offset_framelock_running_fix = 0x0;
                 _offset_resolution = 0x0;
+                _offset_resolution_default = 0x0;
                 _offset_widescreen_219 = 0x0;
                 _offset_fovsetting = 0x0;
                 UpdateStatus(GetString(@"WaitStatus"), Brushes.White);
@@ -358,8 +362,7 @@ namespace SekiroFpsUnlockAndMore
 
             if (cbFov.IsChecked == true)
             {
-                var fovByte = new byte[1];
-                fovByte[0] = ((KeyValuePair<byte, string>)cbSelectFov.SelectedItem).Key;
+                var fovByte = ((KeyValuePair<byte[], string>)cbSelectFov.SelectedItem).Key;
                 WriteBytes(_gameProcStatic, _offset_fovsetting, fovByte);
             }
             else if (cbFov.IsChecked == false)
@@ -407,8 +410,8 @@ namespace SekiroFpsUnlockAndMore
         /// <summary>
         /// Returns the hexadecimal representation of an IEEE-754 floating point number
         /// </summary>
-        /// <param name="input">The floating point number</param>
-        /// <returns>The hexadecimal representation of the input</returns>
+        /// <param name="input">The floating point number.</param>
+        /// <returns>The hexadecimal representation of the input.</returns>
         private string getHexRepresentationFromFloat(float input)
         {
             var f = BitConverter.ToUInt32(BitConverter.GetBytes(input), 0);
@@ -539,8 +542,8 @@ namespace SekiroFpsUnlockAndMore
         /// </summary>
         /// <param name="hProcess">Handle to the process in whose memory the pattern has been found.</param>
         /// <param name="lpPatternAddress">The address where the pattern has been found.</param>
-        /// <param name="instructionLength">The length of the instruction including the 4 bytes pointer</param>
-        /// <remarks>Static pointers in x86-64 are relative offsets from the instruction address. </remarks>
+        /// <param name="instructionLength">The length of the instruction including the 4 bytes pointer.</param>
+        /// <remarks>Static pointers in x86-64 are relative offsets from the instruction address.</remarks>
         /// <returns>The static offset from the process to desired object).</returns>
         internal static long FindOffsetToStaticPointer(IntPtr hProcess, long lpPatternAddress, int instructionLength)
         {
@@ -555,6 +558,27 @@ namespace SekiroFpsUnlockAndMore
         private bool IsNumericInput(string text)
         {
             return Regex.IsMatch(text, @"[^0-9]+");
+        }
+
+        /// <summary>
+        /// Logs messages to log file
+        /// </summary>
+        /// <param name="msg">The message to write to file.</param>
+        private void LogToFile(string msg)
+        {
+            var timedMsg = $@"[{DateTime.Now}] {msg}";
+            Debug.WriteLine(timedMsg);
+            try
+            {
+                using (var writer = new StreamWriter(_logPath, true))
+                {
+                    writer.WriteLine(timedMsg);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($@"{GetString(@"LogFileFail")}{ex.Message}", GetString(@"AppTitle"));
+            }
         }
 
         private void UpdateStatus(string text, Brush color)
@@ -605,24 +629,6 @@ namespace SekiroFpsUnlockAndMore
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
             e.Handled = true;
-        }
-
-        // log messages to file
-        private void LogToFile(string msg)
-        {
-            var timedMsg = $@"[{DateTime.Now}] {msg}";
-            Debug.WriteLine(timedMsg);
-            try
-            {
-                using (var writer = new StreamWriter(_logPath, true))
-                {
-                    writer.WriteLine(timedMsg);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($@"{GetString(@"LogFileFail")}{ex.Message}", GetString(@"AppTitle"));
-            }
         }
 
         #region i18n

@@ -4,23 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="{DynamicResource AppTitle}" Width="306" ResizeMode="CanMinimize" Loaded="Window_Loaded" Closing="Window_Closing" Height="Auto" SizeToContent="Height">
+        Title="{DynamicResource AppTitle}" Height="Auto" SizeToContent="WidthAndHeight" Width="Auto" ResizeMode="CanMinimize" Loaded="Window_Loaded" Closing="Window_Closing">
 
-    <Grid>
+    <Grid Background="#FFF9F9F9">
         <CheckBox x:Name="cbUnlockFps" Content="{DynamicResource UnlockFps}" IsChecked="True" HorizontalAlignment="Left" Margin="10,12,0,0" VerticalAlignment="Top" FontSize="14 px" Checked="CheckBoxChanged_Handler" Unchecked="CheckBoxChanged_Handler"/>
-        <TextBox x:Name="tbFps" Text="144" MaxLength="3" HorizontalAlignment="Left" Height="25" Margin="181,10,0,0" VerticalAlignment="Top" Width="106" FontSize="14 px" PreviewTextInput="Numeric_PreviewTextInput" DataObject.Pasting="Numeric_PastingHandler"/>
+        <TextBox x:Name="tbFps" Text="144" MaxLength="3" HorizontalAlignment="Left" Height="25" Margin="181,10,10,10" VerticalAlignment="Top" Width="106" FontSize="14 px" PreviewTextInput="Numeric_PreviewTextInput" DataObject.Pasting="Numeric_PastingHandler"/>
         <CheckBox x:Name="cbAddWidescreen" Content="{DynamicResource AddWidescreen}" HorizontalAlignment="Left" Margin="10,42,0,0" VerticalAlignment="Top" FontSize="14 px" Checked="CheckBoxChanged_Handler" Unchecked="CheckBoxChanged_Handler"/>
         <TextBox x:Name="tbWidth" Text="2560" MaxLength="4" HorizontalAlignment="Left" Height="25" Margin="181,40,0,0" VerticalAlignment="Top" Width="45" FontSize="14 px" PreviewTextInput="Numeric_PreviewTextInput" DataObject.Pasting="Numeric_PastingHandler" />
         <Label Content="x" HorizontalAlignment="Left" Margin="226,36,0,0" VerticalAlignment="Top" FontSize="14 px"/>
         <TextBox x:Name="tbHeight" Text="1080" MaxLength="4" HorizontalAlignment="Left" Height="25" Margin="242,40,0,0" VerticalAlignment="Top" Width="45" FontSize="14 px" PreviewTextInput="Numeric_PreviewTextInput" DataObject.Pasting="Numeric_PastingHandler" />
         <CheckBox x:Name="cbFov" Content="{DynamicResource AddFov}" HorizontalAlignment="Left" Margin="10,72,0,0" VerticalAlignment="Top" FontSize="14 px" Checked="CheckBoxChanged_Handler" Unchecked="CheckBoxChanged_Handler"/>
-        <ComboBox x:Name="cbSelectFov" HorizontalAlignment="Right" VerticalAlignment="Top" Width="106" Height="25" Margin="0,70,13,0" FontSize="14 px" SelectedValuePath="Key" DisplayMemberPath="Value"/>
+        <ComboBox x:Name="cbSelectFov" HorizontalAlignment="Left" VerticalAlignment="Top" Width="106" Height="25" Margin="181,70,10,10" FontSize="14 px" SelectedValuePath="Key" DisplayMemberPath="Value"/>
         <CheckBox x:Name="cbBorderless" Content="{DynamicResource Borderless}" HorizontalAlignment="Left" Margin="10,100,0,0" VerticalAlignment="Top" FontSize="14 px" Checked="CbBorderless_Checked" Unchecked="CbBorderless_Unchecked"/>
         <CheckBox x:Name="cbBorderlessStretch" Content="{DynamicResource BorderlessStretch}" IsEnabled="False" HorizontalAlignment="Right" Margin="0,100,13,0" VerticalAlignment="Top" FontSize="14 px" Checked="CheckBoxChanged_Handler" Unchecked="CheckBoxChanged_Handler"/>
-        <Button x:Name="bPatch" Content="{DynamicResource Patch}" FontSize="14 px" Margin="10,125,13,0" VerticalAlignment="Top" Height="30"
+        <Button x:Name="bPatch" Content="{DynamicResource Patch}" FontSize="14 px" HorizontalAlignment="Left" Margin="10,125,10,10" VerticalAlignment="Top" Width="277" Height="30"
                 BorderThickness="1" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Focusable="False" Click="BPatch_Click" />
-        <TextBox x:Name="tbStatus" Text="{DynamicResource WaitStatus}" TextAlignment="Center" TextWrapping="NoWrap" Height="25" Margin="10,165,13,0" VerticalAlignment="Top" FontSize="14 px" IsEnabled="False" FontWeight="Bold" />
-        <StackPanel Margin="13,195,12,12" VerticalAlignment="Top">
+        <TextBox x:Name="tbStatus" Text="{DynamicResource WaitStatus}" TextAlignment="Center" HorizontalAlignment="Left" TextWrapping="NoWrap" Height="25" Margin="10,165,10,10" VerticalAlignment="Top" Width="277" FontSize="14 px" IsEnabled="False" FontWeight="Bold" />
+        <StackPanel HorizontalAlignment="Left" Height="Auto" Margin="12,195,12,5" VerticalAlignment="Top" Width="275">
             <TextBlock TextWrapping="WrapWithOverflow" VerticalAlignment="Top" FontSize="11 px" IsEnabled="False">
                 <TextBlock.Inlines>
                     <Run FontWeight="Bold" Text="{DynamicResource R1}"></Run>

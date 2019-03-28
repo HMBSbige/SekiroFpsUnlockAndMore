@@ -33,7 +33,6 @@ namespace SekiroFpsUnlockAndMore
             else if (IntPtr.Size == 8)
                 dwStart = (long)pModule.BaseAddress;
             var nSize = pModule.ModuleMemorySize;
-
             var bData = new byte[nSize];
 
             if (!ReadProcessMemory(hProcess, dwStart, bData, nSize, out var lpNumberOfBytesRead))
